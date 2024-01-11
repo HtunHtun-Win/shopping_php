@@ -23,10 +23,7 @@
               <div class="card-header">
                 <div class="row">
                   <div class="col-md-6">
-                    <h3 class="card-title">UserList</h3>
-                  </div>
-                  <div class="col-md-6">
-                    <a href="user_add.php" class="btn btn-primary float-right">Add New User</a>
+                    <h3 class="card-title">Order list</h3>
                   </div>
                 </div>
               </div>
@@ -36,28 +33,27 @@
                 }else{
                   $pageno = 1;
                 }
-                $numOfrecs = 5;
+                $numOfrecs = 20;
                 $offset = ($pageno-1)*$numOfrecs;
                 if (empty($_POST['search'])) {
                   //Get Total Pagesr
-                  $pdostatement = $pdo->prepare("SELECT * FROM users");
+                  $pdostatement = $pdo->prepare("SELECT * FROM sale_orders ORDER BY id");
                   $pdostatement->execute();
                   $rawresults = $pdostatement->fetchAll();
                   $total_pages = ceil(count($rawresults)/$numOfrecs);
                   //
-                  $pdostatement = $pdo->prepare("SELECT * FROM users LIMIT $offset,$numOfrecs");
+                  $pdostatement = $pdo->prepare("SELECT * FROM sale_orders ORDER BY id LIMIT $offset,$numOfrecs");
                   $pdostatement->execute();
                   $results = $pdostatement->fetchAll();
                 }else{
                   $search = $_POST['search'];
-                  echo $search;
                   //Get Total Pages
-                  $pdostatement = $pdo->prepare("SELECT * FROM posts WHERE title LIKE '%$search%' ORDER BY id DESC");
+                  $pdostatement = $pdo->prepare("SELECT * FROM sale_orders WHERE title LIKE '%$search%' ORDER BY id");
                   $pdostatement->execute();
                   $rawresults = $pdostatement->fetchAll();
                   $total_pages = ceil(count($rawresults)/$numOfrecs);
                   //
-                  $pdostatement = $pdo->prepare("SELECT * FROM posts WHERE title LIKE '%$search%' ORDER BY id DESC LIMIT $offset,$numOfrecs");
+                  $pdostatement = $pdo->prepare("SELECT * FROM sale_orders WHERE title LIKE '%$search%' ORDER BY id LIMIT $offset,$numOfrecs");
                   $pdostatement->execute();
                   $results = $pdostatement->fetchAll();
                 }
@@ -69,40 +65,32 @@
                   <thead>
                     <tr>
                       <th style="width: 10px">No</th>
-                      <th>Name</th>
-                      <th>Email</th>
-                      <th>Role</th>
+                      <th>Customer</th>
+                      <th>TotalPrice</th>
+                      <th>Date</th>
                       <th style="width: 40px">Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     <?php foreach($results as $result): ?>
+                      <?php 
+                        $cat_sql = "SELECT * FROM users WHERE id=".$result['user_id'];
+                        $c_pdo = $pdo->prepare($cat_sql);
+                        $c_pdo->execute();
+                        $c_result = $c_pdo->fetch();
+                      ?>
                       <tr>
                         <td><?= $i ?></td>
-                        <td><?= escape($result['name']) ?></td>
-                        <td><?= escape($result['email'])  ?></td>
-                        <td>
-                          <span class="badge bg-primary">
-                            <?php
-                                $user_role = $result['role'] == 1 ? 'admin' : 'user';
-                                echo "$user_role";
-                             ?>
-                          </span>
-                        </td>
+                        <td><?= escape($c_result['name']) ?></td>
+                        <td><?= escape($result['total_price']) ?></td>
+                        <td><?= escape(date("Y-M-d",strtotime($result['order_date']))) ?></td>
                         <td>
                           <div class="btn-group">
                             <div class="container">
-                              <a href="user_edit.php?id=<?php echo $result['id'] ?>" class="btn btn-warning">Edit</a>
+                              <a href="order_detail.php?id=<?php echo $result['id'] ?>" class="btn btn-default btn-sm">
+                                <span class="fa fa-list"></span>
+                              </a>
                             </div>
-                            <?php if($_SESSION['user_id'] != $result['id']){ ?>
-                              <div class="container">
-                                <a href="#" class="btn btn-danger">Delete</a>
-                              </div>
-                            <?php }else{ ?>
-                              <div class="container">
-                                <a href="#" class="btn btn-success">Active</a>
-                              </div>
-                            <?php } ?>
                           </div>
                         </td>
                       </tr>

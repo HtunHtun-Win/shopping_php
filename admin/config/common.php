@@ -1,10 +1,5 @@
 <?php
 
-	if (empty($_SESSION['token'])) {
-		$token = md5(uniqid(mt_rand(),true));
-		$_SESSION['token'] = $token;
-	}
-
 	if($_SERVER['REQUEST_METHOD'] === 'POST'){
 		if ($_SESSION['token'] != $_POST['token']) {
 			echo "invalid csrf";
@@ -13,6 +8,11 @@
 		}else{
 			unset($_SESSION['token']);
 		}
+	}
+
+	if (empty($_SESSION['token'])) {
+		$token = md5(uniqid(mt_rand(),true));
+		$_SESSION['token'] = $token;
 	}
 
 	function escape($str){

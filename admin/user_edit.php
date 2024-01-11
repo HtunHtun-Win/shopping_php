@@ -50,7 +50,8 @@
               $user = $pdostatement->fetch();
             ?>
           <!-- php-code -->
-            <form action="edit_user.php?id=<?= $uid ?>" method="post">
+            <form action="user_edit.php?id=<?= $uid ?>" method="post">
+              <input type="hidden" name="token" value="<?= $_SESSION['token'] ?>">
             <!-- card start -->
               <div class="card">
                 <div class="card-header">
