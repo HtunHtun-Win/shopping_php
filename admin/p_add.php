@@ -110,7 +110,7 @@
                     <input type="file" name="image">
                   </div>
                   <button class="btn btn-primary">Submit</button>
-                  <a href="/admin/category.php" class="btn btn-warning">Back</a>
+                  <a href="/admin/index.php" class="btn btn-warning">Back</a>
                 </form>
               </div>
             </div>

@@ -10,9 +10,16 @@
     $_SESSION['user_level'] = 'user';
     header('location: /admin/login.php');
   }
+  if ($_GET) {
+    //pass
+  }elseif ($_POST['search']) {
+    $_SESSION['search'] = $_POST['search'];
+  }else{
+    unset($_SESSION['search']);
+  }
 ?>
 
-    <?php include "header.html"; ?>
+    <?php include "header.php"; ?>
 
     <!-- Main content -->
     <div class="content">
@@ -26,7 +33,7 @@
                     <h3 class="card-title">Products list</h3>
                   </div>
                   <div class="col-md-6">
-                    <a href="p_add.php" class="btn btn-primary float-right">Add New Item</a>
+                    <a href="/admin/p_add.php" class="btn btn-primary float-right">Add New Item</a>
                   </div>
                 </div>
               </div>
@@ -36,9 +43,9 @@
                 }else{
                   $pageno = 1;
                 }
-                $numOfrecs = 20;
+                $numOfrecs = 3;
                 $offset = ($pageno-1)*$numOfrecs;
-                if (empty($_POST['search'])) {
+                if (empty($_SESSION['search'])) {
                   //Get Total Pagesr
                   $pdostatement = $pdo->prepare("SELECT * FROM products ORDER BY name");
                   $pdostatement->execute();
@@ -49,14 +56,14 @@
                   $pdostatement->execute();
                   $results = $pdostatement->fetchAll();
                 }else{
-                  $search = $_POST['search'];
+                  $search = $_SESSION['search'];
                   //Get Total Pages
-                  $pdostatement = $pdo->prepare("SELECT * FROM products WHERE title LIKE '%$search%' ORDER BY name");
+                  $pdostatement = $pdo->prepare("SELECT * FROM products WHERE name LIKE '%$search%' ORDER BY id");
                   $pdostatement->execute();
                   $rawresults = $pdostatement->fetchAll();
                   $total_pages = ceil(count($rawresults)/$numOfrecs);
                   //
-                  $pdostatement = $pdo->prepare("SELECT * FROM products WHERE title LIKE '%$search%' ORDER BY name LIMIT $offset,$numOfrecs");
+                  $pdostatement = $pdo->prepare("SELECT * FROM products WHERE name LIKE '%$search%' ORDER BY id LIMIT $offset,$numOfrecs");
                   $pdostatement->execute();
                   $results = $pdostatement->fetchAll();
                 }

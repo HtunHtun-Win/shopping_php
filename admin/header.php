@@ -1,4 +1,4 @@
-<php?
+<?php 
   session_start();
 ?>
 <!DOCTYPE html>
@@ -39,8 +39,10 @@ scratch. This page gets rid of all links and provides the needed markup only.
     </ul>
     <!-- Search Button -->
     <form class="form-inline mt-3" method="post" action="index.php">
+      <input type="hidden" name="token" value="<?= $_SESSION['token'] ?>">
       <div class="input-group input-group-sm">
-        <input name="search" class="form-control form-control-nav" type="search" placeholder="Search" aria-label="Search">
+        <input name="search" class="form-control form-control-nav" type="search" placeholder="Search" aria-label="Search"
+        value="<?= $_SESSION['search'] ?>" >
         <div class="input-group-append">
           <button class="btn btn-navbar" type="submit">
             <i class="fas fa-search"></i>
