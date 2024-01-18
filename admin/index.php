@@ -43,7 +43,7 @@
                 }else{
                   $pageno = 1;
                 }
-                $numOfrecs = 3;
+                $numOfrecs = 10;
                 $offset = ($pageno-1)*$numOfrecs;
                 if (empty($_SESSION['search'])) {
                   //Get Total Pagesr

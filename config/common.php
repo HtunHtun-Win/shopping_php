@@ -3,8 +3,6 @@
 	if($_SERVER['REQUEST_METHOD'] === 'POST'){
 		if ($_SESSION['token'] != $_POST['token']) {
 			echo "invalid csrf";
-			session_destroy();
-			header("location: index.php");
 		}else{
 			unset($_SESSION['token']);
 		}

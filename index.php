@@ -19,32 +19,32 @@
   	}else{
   		$pageno = 1;
   	}
-  	$numOfrecs = 3;
-  	$offset = ($pageno-1) * 3;
+  	$numOfrecs = 6;
+  	$offset = ($pageno-1) * $numOfrecs;
 
   	if ($_SESSION['search']) {
   		$search = $_SESSION['search'];
   		//raw result
-  		$rawsql = "SELECT * FROM products WHERE name LIKE '%$search%'";
+  		$rawsql = "SELECT * FROM products WHERE name LIKE '%$search%' AND quantity>0";
   		$rawstmt = $pdo->prepare($rawsql);
   		$rawstmt->execute();
   		$rawresults = $rawstmt->fetchAll();
   		$total_pages = ceil(count($rawresults)/$numOfrecs);
 
-  		$sql = "SELECT * FROM products WHERE name LIKE '%$search%' LIMIT $offset,$numOfrecs";
+  		$sql = "SELECT * FROM products WHERE name LIKE '%$search%' AND quantity>0 LIMIT $offset,$numOfrecs";
   		$pdostatement = $pdo->prepare($sql);
   		$pdostatement->execute();
   		$products = $pdostatement->fetchAll();
 
   	}elseif($_GET['category']){
   		//raw result
-  		$rawsql = "SELECT * FROM products WHERE category_id=:id";
+  		$rawsql = "SELECT * FROM products WHERE category_id=:id AND quantity>0";
   		$rawstmt = $pdo->prepare($rawsql);
   		$rawstmt->execute([':id'=>$_GET['category']]);
   		$rawresults = $rawstmt->fetchAll();
   		$total_pages = ceil(count($rawresults)/$numOfrecs);
 
-  		$sql = "SELECT * FROM products WHERE category_id=:id LIMIT $offset,$numOfrecs";
+  		$sql = "SELECT * FROM products WHERE category_id=:id AND quantity>0 LIMIT $offset,$numOfrecs";
   		$pdostatement = $pdo->prepare($sql);
   		$pdostatement->execute([':id'=>$_GET['category']]);
   		$products = $pdostatement->fetchAll();
@@ -52,13 +52,13 @@
 
   	}else{
   		//raw result
-  		$rawsql = "SELECT * FROM products";
+  		$rawsql = "SELECT * FROM products WHERE quantity>0";
   		$rawstmt = $pdo->prepare($rawsql);
   		$rawstmt->execute();
   		$rawresults = $rawstmt->fetchAll();
   		$total_pages = ceil(count($rawresults)/$numOfrecs);
 
-  		$sql = "SELECT * FROM products LIMIT $offset,$numOfrecs";
+  		$sql = "SELECT * FROM products WHERE quantity>0 LIMIT $offset,$numOfrecs";
   		$pdostatement = $pdo->prepare($sql);
   		$pdostatement->execute();
   		$products = $pdostatement->fetchAll();
@@ -88,14 +88,16 @@
 						<?php foreach($products as $product): ?>
 							<div class="col-lg-4 col-md-6">
 								<div class="single-product">
-									<img class="img-fluid" src="<?= "admin/".$product['image'] ?>" style="height: 250px;">
+									<a href="product_detail.php?id=<?= $product['id'] ?>">
+										<img class="img-fluid" src="<?= "admin/".$product['image'] ?>" style="height: 250px;">
+									</a>
 									<div class="product-details">
 										<h6><?= $product['name'] ?></h6>
 										<div class="price">
 											<h6><?= $product['price'] ?></h6>
 										</div>
 										<div class="prd-bottom">
-											<a href="" class="social-info">
+											<a href="addtocart.php?id=<?= $product['id'] ?>" class="social-info">
 												<span class="ti-bag"></span>
 												<p class="hover-text">add to bag</p>
 											</a>

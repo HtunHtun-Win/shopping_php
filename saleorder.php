@@ -1,20 +1,47 @@
-<?php 
+<?php  
 	session_start();
-	require 'config/config.php';
-	if (empty($_GET['id'])) {
-		header('Location: /index.php');
-	}else{
-		$id =$_GET['id'];
-		$sql = "SELECT * FROM products WHERE id=$id";
-		$pdostatement = $pdo->prepare($sql);
-		$pdostatement->execute();
-		$product = $pdostatement->fetch();
+	require "config/config.php";
+	require "config/common.php";
 
-		$cat_id = $product['category_id'];
-		$cat_sql = "SELECT * FROM categories WHERE id=$cat_id";
-		$cat_statement = $pdo->prepare($cat_sql);
-		$cat_statement->execute();
-		$category = $cat_statement->fetch();
+	if ($_SESSION['cart']) {
+		$cur_items = $_SESSION['cart'];
+		$total_amount = 0;
+		foreach ($cur_items as $cart => $qty) {
+			$id = str_replace("id", "", $cart);
+	        $sql = "SELECT * FROM products WHERE id=$id";
+	        $pdostatement = $pdo->prepare($sql);
+	        $pdostatement->execute();
+	        $result = $pdostatement->fetch();
+	        $total_amount += $result['price']*$qty;
+		}
+		$user_id = $_SESSION['user_id'];
+		$saleSql = "INSERT INTO sale_orders(user_id,total_price) VALUES(:uid,:total)";
+		$salePDO = $pdo->prepare($saleSql);
+		$salePDO->execute([
+			':uid' => $user_id,
+			':total' => $total_amount,
+		]);
+		$saleid = $pdo->lastInsertId();
+		//for datail
+		$detailSql = "INSERT INTO sale_order_detail(sale_order_id,product_id,quantity) VALUES(:saleid,:pid,:qty)";
+		$detailPdo = $pdo->prepare($detailSql);
+		//for update stock
+		$updateStock = "UPDATE products SET quantity=quantity-:qty WHERE id=:pid";
+		$updatePdo = $pdo->prepare($updateStock);
+
+		foreach ($cur_items as $cart => $qty) {
+			$pid = str_replace("id", "", $cart);
+			$detailPdo->execute([
+				':saleid' => $saleid,
+				':pid' => $pid,
+				':qty' => $qty
+			]);
+			$updatePdo->execute([
+				':qty' => $qty,
+				':pid' => $pid,
+			]);
+		}
+		unset($_SESSION['cart']);
 	}
 ?>
 
@@ -36,18 +63,17 @@
 	<meta charset="UTF-8">
 	<!-- Site Title -->
 	<title>Karma Shop</title>
+
 	<!--
-			CSS
-			============================================= -->
+		CSS
+		============================================= -->
 	<link rel="stylesheet" href="css/linearicons.css">
-	<link rel="stylesheet" href="css/font-awesome.min.css">
-	<link rel="stylesheet" href="css/themify-icons.css">
-	<link rel="stylesheet" href="css/bootstrap.css">
 	<link rel="stylesheet" href="css/owl.carousel.css">
+	<link rel="stylesheet" href="css/themify-icons.css">
+	<link rel="stylesheet" href="css/font-awesome.min.css">
 	<link rel="stylesheet" href="css/nice-select.css">
 	<link rel="stylesheet" href="css/nouislider.min.css">
-	<link rel="stylesheet" href="css/ion.rangeSlider.css" />
-	<link rel="stylesheet" href="css/ion.rangeSlider.skinFlat.css" />
+	<link rel="stylesheet" href="css/bootstrap.css">
 	<link rel="stylesheet" href="css/main.css">
 </head>
 
@@ -59,7 +85,7 @@
 			<nav class="navbar navbar-expand-lg navbar-light main_box">
 				<div class="container">
 					<!-- Brand and toggle get grouped for better mobile display -->
-					<a class="navbar-brand logo_h" href="index.php"><h4>Shopping<h4></a>
+					<a class="navbar-brand logo_h" href="index.php"><h4>AP Shopping<h4></a>
 					<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
 					 aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
 						<span class="icon-bar"></span>
@@ -75,11 +101,6 @@
 							}
 						}
 					?>
-					<div class="collapse navbar-collapse offset" id="navbarSupportedContent">
-						<ul class="nav navbar-nav navbar-right">
-							<li class="nav-item"><a href="<?php if($cart!=0){echo "cart.php";} ?>" class="cart"><span class="ti-bag"><?= $cart ?></span></a></li>
-						</ul>
-					</div>
 				</div>
 			</nav>
 		</div>
@@ -91,9 +112,10 @@
 		<div class="container">
 			<div class="breadcrumb-banner d-flex flex-wrap align-items-center justify-content-end">
 				<div class="col-first">
-					<h1>Product Details Page</h1>
+					<h1>Confirmation</h1>
 					<nav class="d-flex align-items-center">
-						<a href="index.php">Home<span class="lnr lnr-arrow-right"></span></a>
+						<a href="index.html">Home<span class="lnr lnr-arrow-right"></span></a>
+						<a href="category.html">Confirmation</a>
 					</nav>
 				</div>
 			</div>
@@ -101,46 +123,16 @@
 	</section>
 	<!-- End Banner Area -->
 
-	<!--================Single Product Area =================-->
-	<div class="product_image_area" style="padding-top:50px !important">
+	<!--================Order Details Area =================-->
+	<section class="order_details section_gap">
 		<div class="container">
-			<div class="row s_product_inner">
-				<div class="col-lg-6">
-					<img class="img-fluid" src="admin/<?= $product['image'] ?>" width='450px'>
-				</div>
-				<div class="col-lg-5 offset-lg-1">
-					<div class="s_product_text">
-						<h3><?= $product['name'] ?></h3>
-						<h2><?= $product['price'] ?></h2>
-						<ul class="list">
-							<li><a class="active" href="#"><span>Category</span> : <?= $category['name'] ?></a></li>
-							<li><a href="#"><span>Availibility</span> : In Stock (<?= $product['quantity'] ?> pcs)</a></li>
-						</ul>
-						<p><?= $product['description'] ?></p>
-						<form action="addtocart.php" method="post">
-							<input type="hidden" name="id" value="<?= $product['id'] ?>">
-							<div class="product_count">
-								<label for="qty">Quantity:</label>
-								<input type="text" name="qty" id="sst" maxlength="12" value="1" title="Quantity:" class="input-text qty">
-								<button onclick="var result = document.getElementById('sst'); var sst = result.value; if( !isNaN( sst )) result.value++;return false;"
-								 class="increase items-count" type="button"><i class="lnr lnr-chevron-up"></i></button>
-								<button onclick="var result = document.getElementById('sst'); var sst = result.value; if( !isNaN( sst ) &amp;&amp; sst > 0 ) result.value--;return false;"
-								 class="reduced items-count" type="button"><i class="lnr lnr-chevron-down"></i></button>
-							</div>
-							<div class="card_area d-flex align-items-center">
-								<button class="primary-btn" style="border:none">Add to Cart</button>
-								<a class="primary-btn" href="index.php">Back</a>
-							</div>
-						</form>
-					</div>
-				</div>
-			</div>
+			<h3 class="title_confirmation">Thank you. Your order has been received.</h3>
 		</div>
-	</div>
-	<!--================End Single Product Area =================-->
+	</section>
+	<!--================End Order Details Area =================-->
 
-		<!-- start footer Area -->
-	<footer class="footer-area section_gap mt-3">
+	<!-- start footer Area -->
+	<footer class="footer-area section_gap">
 		<div class="container">
 			<div class="footer-bottom d-flex justify-content-center align-items-center flex-wrap">
 				<p class="footer-text m-0"><!-- Link back to Colorlib can't be removed. Template is licensed under CC BY 3.0. -->
@@ -151,6 +143,9 @@ Copyright &copy;<script>document.write(new Date().getFullYear());</script> All r
 		</div>
 	</footer>
 	<!-- End footer Area -->
+
+
+
 
 	<script src="js/vendor/jquery-2.2.4.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4"
@@ -166,7 +161,6 @@ Copyright &copy;<script>document.write(new Date().getFullYear());</script> All r
 	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCjCGmQ0Uq4exrzdcL6rvxywDDOvfAu6eE"></script>
 	<script src="js/gmaps.min.js"></script>
 	<script src="js/main.js"></script>
-
 </body>
 
 </html>
